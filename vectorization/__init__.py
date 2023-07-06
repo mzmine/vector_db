@@ -1,1 +1,1 @@
-__all__=["simple_vectorization"]
+__all__=["simple_vectorization","reshape_vectors","create_IndexFlatL2"]
