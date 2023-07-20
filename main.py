@@ -16,6 +16,15 @@ from preprocessing.peak_processing import peak_processing
 from preprocessing.train_spec2vec import train_spec2vec
 from vectorization.reshape_vectors import reshape_vectors
 from vectorization.create_IndexFlatL2 import create_IndexFlatL2
+from vectorization.create_IndexFlatIP import create_IndexFlatIP
+from vectorization.create_IndexIVFFlat import create_IndexIVFFlat
+from vectorization.create_IndexLSH import create_IndexLSH
+from vectorization.create_IndexHNSWFlat import create_IndexHNSWFlat
+from vectorization.create_IndexIVFScalarQuantizer import create_IndexIVFScalarQuantizer
+from vectorization.create_IndexIVFPQ import create_IndexIVFPQ
+from vectorization.create_IndexIVFPQR import create_IndexIVFPQR
+from vectorization.create_IndexPQ import create_IndexPQ
+from vectorization.create_IndexScalarQuantizer import create_IndexScalarQuantizer
 from vectorization.simple_vectorization import simpleVectorization
 from comparison.cosine_greedy import cosine_greedy
 from comparison.modified_cosine import modified_cosine
@@ -33,23 +42,19 @@ start_time = time.time()
 spectrums= loadScpectrums("C:\\Users\\usuario\\Desktop\\GSOC\\vector_db\\GNPS-NIH-NATURALPRODUCTSLIBRARY.mgf")
 spectrums = [metadata_processing(s) for s in spectrums]
 spectrums = [peak_processing(s) for s in spectrums]
-model= importMS2DeepscoreModel("C:\\Users\\usuario\\Desktop\\GSOC\\vector_db\\MS2DeepScore_allGNPSpositive_10k_500_500_200.hdf5")
 preprocesing_time = time.time()-start_time
-"""
 vectors = [simpleVectorization(s) for s in spectrums]
-index = create_IndexFlatL2(vectors)
+index = create_IndexIVFPQR(vectors,4)
 vectors_array = reshape_vectors(vectors)
-"""
 vectorization_time = time.time()-(preprocesing_time+start_time)
-"""
+index.train(vectors_array)
 index.add(vectors_array)
 D, I = index.search(vectors_array[:5], 4)
-"""
-scores=ms2deepscore(model,spectrums)
 comparison_time = time.time()-(preprocesing_time+start_time+vectorization_time)
-getBestMatches(scores,spectrums,13,20)
+print(D)
+print(I)
 visualization_time = time.time()-(preprocesing_time+start_time+vectorization_time+comparison_time)
-export_benchmarking("Ms2Deepscore",preprocesing_time,comparison_time,visualization_time)
+export_benchmarking("IVFPQR",preprocesing_time,comparison_time,visualization_time,vectorization_time)
 
 
 

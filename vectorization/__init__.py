@@ -1,1 +1,1 @@
-__all__=["simple_vectorization","reshape_vectors","create_IndexFlatL2"]
+__all__=["simple_vectorization","reshape_vectors","create_IndexFlatL2","create_IndexFlatIP","create_IndexIVFFlat","create_IndexHNSWFlat","create_IndexLSH","create_IndexScalarQuantizer","create_IndexPQ","create_IndexIVFPQ","create_IndexIVFPQR","create_IndexIVFScalarQuantizer"]
