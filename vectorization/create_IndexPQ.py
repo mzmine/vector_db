@@ -1,7 +1,8 @@
 import faiss
 
 
-def create_IndexPQ(vectors):
-    max_vector_length = max(v.shape[1] for v in vectors)
-    index = faiss.IndexPQ(max_vector_length * 2,max_vector_length * 2,2)
+def create_IndexPQ(vectors_array):
+    index = faiss.IndexPQ(len(vectors_array[0]) ,len(vectors_array[0]) ,2)
+    index.train(vectors_array)
+    index.add(vectors_array)
     return index
