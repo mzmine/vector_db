@@ -26,6 +26,7 @@ from vectorization.create_IndexIVFPQR import create_IndexIVFPQR
 from vectorization.create_IndexPQ import create_IndexPQ
 from vectorization.create_IndexScalarQuantizer import create_IndexScalarQuantizer
 from vectorization.simple_vectorization import simpleVectorization
+from vectorization.simple_vectorization2 import simpleVectorization2
 from vectorization.create_MilvusEntities import create_MilvusEntities
 from vectorization.create_MilvusCollection import create_MilvusCollection
 from vectorization.create_MilvusIndexIVFFlatL2 import create_MilvusIndexIVFFlatL2
@@ -41,51 +42,24 @@ from statistics.export_benchmarking import export_benchmarking
 import time
 
 
-from pymilvus import (
-    connections,
-    utility,
-    FieldSchema,
-    CollectionSchema,
-    DataType,
-    Collection,
-)
-import random
 
-"""
 start_time = time.time()
-"""
-spectrums= loadScpectrums("C:\\Users\\usuario\\Desktop\\GSOC\\vector_db\\GNPS-NIH-NATURALPRODUCTSLIBRARY.mgf")
+spectrums= loadScpectrums("C:\\Users\\migue\\OneDrive\\Escritorio\\GSOC\\vector_db\\GNPS-NIH-NATURALPRODUCTSLIBRARY.mgf")
 spectrums = [metadata_processing(s) for s in spectrums]
 spectrums = [peak_processing(s) for s in spectrums]
-"""
 preprocesing_time = time.time()-start_time
-"""
-vectors = [simpleVectorization(s) for s in spectrums]
-vectors_array = reshape_vectors(vectors)
-"""
-index = create_IndexIVFPQR(vectors_array,4)
+vectors_array = simpleVectorization2(spectrums)
+x= [simpleVectorization(s) for s in spectrums[:2]]
+#vectors_array = reshape_vectors(vectors)
+index = create_IndexFlatL2(vectors_array)
 vectorization_time = time.time()-(preprocesing_time+start_time)
 D, I = index.search(vectors_array[:5], 4)
 comparison_time = time.time()-(preprocesing_time+start_time+vectorization_time)
 print(D)
 print(I)
 visualization_time = time.time()-(preprocesing_time+start_time+vectorization_time+comparison_time)
-export_benchmarking("IVFPQR",preprocesing_time,comparison_time,visualization_time,vectorization_time)
-"""
+export_benchmarking("FlatL2",preprocesing_time,comparison_time,visualization_time,vectorization_time)
 
-connections.connect("default", host="localhost", port="19530")
-entities= create_MilvusEntities(vectors_array)
-milvus_vectors=create_MilvusCollection(vectors_array,entities)
-milvus_vectors=create_MilvusIndexFlatL2(milvus_vectors)
-vectors_to_search = entities[-1][2:]
-search_params = {
-    "metric_type": "L2",
-    #"params": {"nprobe": 10},
-}
-result = milvus_vectors.search(vectors_to_search, "embeddings", search_params, limit=3, output_fields=["pk"])
-print(result)
-result = milvus_vectors.search(vectors_to_search, "embeddings", search_params, limit=3, expr="pk > 10", output_fields=["pk"])
-print(result)
 
 
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/
