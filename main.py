@@ -14,6 +14,7 @@ from IO.importing import importMS2DeepscoreModel
 from preprocessing.metadata_processing import metadata_processing
 from preprocessing.peak_processing import peak_processing
 from preprocessing.train_spec2vec import train_spec2vec
+from preprocessing.binPeakList import bin_peak_list
 from vectorization.reshape_vectors import reshape_vectors
 from vectorization.create_IndexFlatL2 import create_IndexFlatL2
 from vectorization.create_IndexFlatIP import create_IndexFlatIP
@@ -54,30 +55,94 @@ from pymilvus import (
     DataType,
     Collection,
 )
+import logging
+import pyteomics.mgf
+from tqdm import tqdm
+import pandas as pd
 
-connections.connect("default", host="localhost", port="19530")
+
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
+
+
+def remove_random(peaks, remove_n=2):
+    remove_indexes = np.random.randint(0, len(peaks[0]), remove_n)
+    peaks = np.delete(peaks, remove_indexes, 1)
+    peaks[1] = peaks[1] * (1.15 - 0.30 * np.random.random_sample(len(peaks[0])))
+    return peaks
+
+
+def read_mgf(input_file, min_signals=4, max_mz=1500, min_rel_intensity=0.001):
+    spectra = []
+    libids = []
+    precursors = []
+    with pyteomics.mgf.MGF(input_file) as f_in:
+        for spectrum_dict in tqdm(f_in):
+            try:
+                precursor_mz = float(spectrum_dict["params"]["pepmass"][0])
+                if precursor_mz <= max_mz and len(spectrum_dict["intensity array"]) > 0 and \
+                        int(spectrum_dict["params"]["libraryquality"]) <= 3 and spectrum_dict["params"]["ionmode"] == \
+                        "Positive":
+                    threshold = min_rel_intensity * max(spectrum_dict["intensity array"])
+                    peaks = np.array([(mz, intensity) for mz, intensity in zip(spectrum_dict["m/z array"], spectrum_dict[
+                        "intensity array"]) if intensity >= threshold])
+
+                    sum_by_max = peaks[1].sum() / peaks[1].max()
+                    print(sum_by_max)
+                    if (peaks.shape[0] >= min_signals) and (sum_by_max > 1):
+                        spectra.append(np.array(peaks, dtype="float32").T)
+                        libids.append(spectrum_dict["params"].get("spectrumid", None))
+                        precursors.append(precursor_mz)
+                        if len(precursors)>10000:
+                            break
+            except:
+                # logger.warning("Cannot read spectrum "+str(spectrum_dict))
+                pass
+
+    return pd.DataFrame(
+        {
+            "gnpsid": libids,
+            "precursor_mz": precursors,
+            "peaks": spectra
+        }
+    )
+
+
+def argsort(*arrays):
+    indexes = arrays[0].argsort()
+    return tuple((a[indexes] for a in arrays))
+
 start_time = time.time()
-spectra= loadScpectrums("C:/Users/usuario/Desktop/GSOC/vector_db/GNPS-NIH-NATURALPRODUCTSLIBRARY.mgf")
-spectra = [metadata_processing(s) for s in spectra]
-spectra = [peak_processing(s) for s in spectra]
+# lib1 = r"D:\Data\lib\BILELIB19.mgf"
+lib1 = r"C:\Users\migue\OneDrive\Escritorio\GSOC\vector_db\GNPS-NIH-NATURALPRODUCTSLIBRARY.mgf"
+libname = "gnps"
+
+#  use 11 as min mz as we are also using it for neutral losses
+min_mz = 11
+max_mz = 1500
+logger.info("Read mgf")
+spec_df = read_mgf(lib1, 4, max_mz, 0.001)
+logger.info("read done; create vectors for {}".format(spec_df.shape[0]))
+spec_df["npeaks"] = [len(peaks[1]) for peaks in spec_df["peaks"]]
+spec_df["max_i"] = [peaks[1].max() for peaks in spec_df["peaks"]]
+spec_df["sum_i"] = [peaks[1].sum() for peaks in spec_df["peaks"]]
+spec_df["sum_by_max"] = spec_df["sum_i"] / spec_df["max_i"]
+spec_df = spec_df.sort_values(by="sum_by_max", ascending=False).reset_index()
+spec_df.to_csv(f"{libname}_calc.csv")
+
 preprocesing_time = time.time()-start_time
-vectors_array = simpleVectorization2(spectra)
-entities=create_MilvusEntities(vectors_array)
-milvus_vectors=create_MilvusCollection(vectors_array,entities)
-metric_type="L2"
-milvus_vectors = create_MilvusIndexANNOY(milvus_vectors,metric_type,10)
-vectors_to_search = entities[-1][-2:]
-search_params = create_MilvusFlatSP(metric_type)
-result = milvus_vectors.search(vectors_to_search, "embeddings", search_params, limit=3, output_fields=["pk"])
-print(result)
-"""vectorization_time = time.time()-(preprocesing_time+start_time)
+
+vectors_array = np.array([bin_peak_list(peaks, min_mz, max_mz, 0.05, precursor, include_neutral_loss=True) for
+                       precursor, peaks in zip(spec_df["precursor_mz"], spec_df["peaks"])], dtype="float32")
+index= create_IndexFlatL2(vectors_array)
+vectorization_time = time.time()-(preprocesing_time+start_time)
 D, I = index.search(vectors_array[:5], 4)
 comparison_time = time.time()-(preprocesing_time+start_time+vectorization_time)
 print(D)
 print(I)
 visualization_time = time.time()-(preprocesing_time+start_time+vectorization_time+comparison_time)
 export_benchmarking("FlatL2",preprocesing_time,comparison_time,visualization_time,vectorization_time)
-"""
+
 
 
 
