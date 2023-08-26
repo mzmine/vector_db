@@ -6,4 +6,5 @@ def create_IndexIVFPQR(vectors_array, nlist):
     training_points = 100 * nlist
     quantizer.train(vectors_array[:training_points])
     index = faiss.IndexIVFPQR(quantizer,len(vectors_array[0]), nlist, len(vectors_array[0]),4,len(vectors_array[0]),4)
+    index.train(vectors_array)
     return index

@@ -1,0 +1,54 @@
+milvus: false
+index: "IVFPQR"
+search_params: "L2" #only with milvus
+faiss_indexes:
+  flatIP:
+    function: "create_IndexFlatIP"
+  flatL2:
+    function: "create_IndexFlatL2"
+  HNSWFlat:
+    function: "create_IndexHNSWFlat"
+    param1: 0 #M
+  IVFFlat:
+    function: "create_IndexIVFFlat"
+    param1: 4 #ncells
+    param2: 1 #nprobe
+  IVFPQ:
+    function: "create_IndexIVFPQ"
+    param1: 4 #nlist
+  IVFPQR:
+    function: "create_IndexIVFPQR"
+    param1: 4 #nlist
+  IVFScalarQuantizer:
+    function: "create_IndexIVFScalarQuantizer"
+    param1: 4 #nlist
+    param2: "ScalarQuantizer.QT_8bit" #quantizer_type
+  LSH:
+    function: "create_IndexLSH"
+  PQ:
+    function: "create_IndexPQ"
+  ScalarQuantizer:
+    function: "create_IndexScalarQuantizer"
+    param1: "ScalarQuantizer.QT_8bit" #quantizer_type
+
+milvus_indexes:
+  ANNOY:
+    function: "create_MilvusIndexANNOY"
+    param1: 2 #n_trees
+  Flat:
+    function: "create_MilvusIndexFlat"
+  HSNW:
+    function: "create_MilvusIndexHSNW"
+  IVFFlat:
+    function: "create_MilvusIndexIVFFlat"
+  IVFPQ:
+    function: "create_MilvusIndexIVFPQ"
+  IVFSQ8:
+    function: "create_MilvusIndexIVFSQ8"
+
+search_parameters:
+  flat:
+    function: "create_MilvusFlatSP"
+  IVF:
+    function: "create_MilvusIVFSP"
+    param1: 4 #nprobe

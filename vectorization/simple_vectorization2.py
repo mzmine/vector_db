@@ -1,7 +1,7 @@
 import numpy as np
 
 
-def simpleVectorization2(spectra):
+def simple_vectorization2(spectra):
     spectra_array = np.empty((len(spectra), 10000))
     i=0
     for s in spectra:

@@ -11,6 +11,7 @@ from IO.export import generateNetwork
 from IO.importing import loadScpectrums
 from IO.importing import importSpec2VecModel
 from IO.importing import importMS2DeepscoreModel
+from IO.importing import read_mgf
 from preprocessing.metadata_processing import metadata_processing
 from preprocessing.peak_processing import peak_processing
 from preprocessing.train_spec2vec import train_spec2vec
@@ -26,8 +27,8 @@ from vectorization.create_IndexIVFPQ import create_IndexIVFPQ
 from vectorization.create_IndexIVFPQR import create_IndexIVFPQR
 from vectorization.create_IndexPQ import create_IndexPQ
 from vectorization.create_IndexScalarQuantizer import create_IndexScalarQuantizer
-from vectorization.simple_vectorization import simpleVectorization
-from vectorization.simple_vectorization2 import simpleVectorization2
+from vectorization.simple_vectorization import simple_vectorization
+from vectorization.simple_vectorization2 import simple_vectorization2
 from vectorization.create_MilvusEntities import create_MilvusEntities
 from vectorization.create_MilvusCollection import create_MilvusCollection
 from vectorization.create_MilvusIndexIVFFlat import create_MilvusIndexIVFFlat
@@ -56,58 +57,19 @@ from pymilvus import (
     Collection,
 )
 import logging
-import pyteomics.mgf
-from tqdm import tqdm
-import pandas as pd
+import yaml
 
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
-
+with open('indexesConfig.yaml', 'r') as file:
+    yaml_data = yaml.safe_load(file)
 
 def remove_random(peaks, remove_n=2):
     remove_indexes = np.random.randint(0, len(peaks[0]), remove_n)
     peaks = np.delete(peaks, remove_indexes, 1)
     peaks[1] = peaks[1] * (1.15 - 0.30 * np.random.random_sample(len(peaks[0])))
     return peaks
-
-
-def read_mgf(input_file, min_signals=4, max_mz=1500, min_rel_intensity=0.001):
-    spectra = []
-    libids = []
-    precursors = []
-    with pyteomics.mgf.MGF(input_file) as f_in:
-        for spectrum_dict in tqdm(f_in):
-            try:
-                precursor_mz = float(spectrum_dict["params"]["pepmass"][0])
-                if precursor_mz <= max_mz and len(spectrum_dict["intensity array"]) > 0 and \
-                        int(spectrum_dict["params"]["libraryquality"]) <= 3 and spectrum_dict["params"]["ionmode"] == \
-                        "Positive":
-                    threshold = min_rel_intensity * max(spectrum_dict["intensity array"])
-                    peaks = np.array([(mz, intensity) for mz, intensity in zip(spectrum_dict["m/z array"], spectrum_dict[
-                        "intensity array"]) if intensity >= threshold])
-
-                    sum_by_max = peaks[1].sum() / peaks[1].max()
-                    print(sum_by_max)
-                    if (peaks.shape[0] >= min_signals) and (sum_by_max > 1):
-                        spectra.append(np.array(peaks, dtype="float32").T)
-                        libids.append(spectrum_dict["params"].get("spectrumid", None))
-                        precursors.append(precursor_mz)
-                        if len(precursors)>10000:
-                            break
-            except:
-                # logger.warning("Cannot read spectrum "+str(spectrum_dict))
-                pass
-
-    return pd.DataFrame(
-        {
-            "gnpsid": libids,
-            "precursor_mz": precursors,
-            "peaks": spectra
-        }
-    )
-
-
 def argsort(*arrays):
     indexes = arrays[0].argsort()
     return tuple((a[indexes] for a in arrays))
@@ -134,7 +96,22 @@ preprocesing_time = time.time()-start_time
 
 vectors_array = np.array([bin_peak_list(peaks, min_mz, max_mz, 0.05, precursor, include_neutral_loss=True) for
                        precursor, peaks in zip(spec_df["precursor_mz"], spec_df["peaks"])], dtype="float32")
-index= create_IndexFlatL2(vectors_array)
+index_type = yaml_data['index']
+if (not yaml_data['milvus']):
+    if index_type in yaml_data['faiss_indexes']:
+        function_name = yaml_data['faiss_indexes'][index_type]['function']
+        if function_name in globals():
+            selected_function = globals()[function_name]
+        if 'param2' in yaml_data['faiss_indexes'][index_type]:
+            param1 = yaml_data['faiss_indexes'][index_type]['param1']
+            param2 = yaml_data['faiss_indexes'][index_type]['param2']
+            index = selected_function(vectors_array, param1, param2)
+        elif 'param1' in yaml_data['faiss_indexes'][index_type]:
+            param1 = yaml_data['faiss_indexes'][index_type]['param1']
+            index = selected_function(vectors_array, param1)
+        else:
+            index = selected_function(vectors_array)
+
 vectorization_time = time.time()-(preprocesing_time+start_time)
 D, I = index.search(vectors_array[:5], 4)
 comparison_time = time.time()-(preprocesing_time+start_time+vectorization_time)
@@ -142,8 +119,6 @@ print(D)
 print(I)
 visualization_time = time.time()-(preprocesing_time+start_time+vectorization_time+comparison_time)
 export_benchmarking("FlatL2",preprocesing_time,comparison_time,visualization_time,vectorization_time)
-
-
 
 
 
