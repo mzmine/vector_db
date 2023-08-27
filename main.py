@@ -58,6 +58,8 @@ from pymilvus import (
 )
 import logging
 import yaml
+import subprocess
+
 
 
 logging.basicConfig(level=logging.DEBUG)
@@ -76,7 +78,7 @@ def argsort(*arrays):
 
 start_time = time.time()
 # lib1 = r"D:\Data\lib\BILELIB19.mgf"
-lib1 = r"C:\Users\migue\OneDrive\Escritorio\GSOC\vector_db\GNPS-NIH-NATURALPRODUCTSLIBRARY.mgf"
+lib1 = r"C:\Users\usuario\Desktop\GSOC\vector_db\GNPS-NIH-NATURALPRODUCTSLIBRARY.mgf"
 libname = "gnps"
 
 #  use 11 as min mz as we are also using it for neutral losses
@@ -111,14 +113,43 @@ if (not yaml_data['milvus']):
             index = selected_function(vectors_array, param1)
         else:
             index = selected_function(vectors_array)
+    D, I = index.search(vectors_array[:5], 4)
+    print(D)
+    print(I)
+else:
+    search_type = yaml_data['search_params_type']
+    #command = ["wsl", "sudo", "docker-compose", "up", "-d"]
+    #subprocess.run(command)
+    connections.connect("default", host="localhost", port="19530")
+    entities= create_MilvusEntities(vectors_array[:100])
+    milvus_vectors= create_MilvusCollection(vectors_array[:100],entities)
+    if search_type in yaml_data['search_parameters']:
+        function_name = yaml_data['search_parameters'][search_type]['function']
+        metric_type = yaml_data['metric_type']
+        if function_name in globals():
+            selected_function = globals()[function_name]
 
-vectorization_time = time.time()-(preprocesing_time+start_time)
-D, I = index.search(vectors_array[:5], 4)
-comparison_time = time.time()-(preprocesing_time+start_time+vectorization_time)
-print(D)
-print(I)
-visualization_time = time.time()-(preprocesing_time+start_time+vectorization_time+comparison_time)
-export_benchmarking("FlatL2",preprocesing_time,comparison_time,visualization_time,vectorization_time)
+        if 'param1' in yaml_data['search_parameters'][search_type]:
+            param1 = yaml_data['search_parameters'][search_type]['param1']
+            search_params = selected_function(metric_type, param1)
+        else:
+            search_params = selected_function(metric_type)
+        function_name = yaml_data['milvus_indexes'][index_type]['function']
+        if function_name in globals():
+            selected_function = globals()[function_name]
+        if 'param1' in yaml_data['milvus_indexes'][index_type]:
+            param1 = yaml_data['milvus_indexes'][index_type]['param1']
+            milvus_vectors = selected_function(milvus_vectors,metric_type, param1)
+        else:
+            milvus_vectors = selected_function(milvus_vectors, metric_type)
+        milvus_vectors.load()
+        vectors_to_search = entities[-1][-2:]
+        result = milvus_vectors.search(vectors_to_search, "embeddings", search_params, limit=3, output_fields=["pk"])
+        print(result)
+        #command = ["wsl", "sudo", "docker-compose", "down"]
+        #subprocess.run(command)
+        #command = ["wsl", "sudo", "rm", "-rf", "volumes"]
+        #subprocess.run(command)
 
 
 

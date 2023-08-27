@@ -1,6 +1,7 @@
-milvus: false
-index: "IVFPQR"
-search_params: "L2" #only with milvus
+milvus: true
+index: "Flat"
+search_params_type: "flat" #only with milvus
+metric_type: "L2" #only with milvus
 faiss_indexes:
   flatIP:
     function: "create_IndexFlatIP"
@@ -22,14 +23,12 @@ faiss_indexes:
   IVFScalarQuantizer:
     function: "create_IndexIVFScalarQuantizer"
     param1: 4 #nlist
-    param2: "ScalarQuantizer.QT_8bit" #quantizer_type
   LSH:
     function: "create_IndexLSH"
   PQ:
     function: "create_IndexPQ"
   ScalarQuantizer:
     function: "create_IndexScalarQuantizer"
-    param1: "ScalarQuantizer.QT_8bit" #quantizer_type
 
 milvus_indexes:
   ANNOY:
