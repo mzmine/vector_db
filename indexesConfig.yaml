@@ -1,4 +1,4 @@
-milvus: true
+mode: "milvus"
 index: "Flat"
 search_params_type: "flat" #only with milvus
 metric_type: "L2" #only with milvus
@@ -37,7 +37,7 @@ milvus_indexes:
   Flat:
     function: "create_MilvusIndexFlat"
   HSNW:
-    function: "create_MilvusIndexHSNW"
+    function: "create_MilvusIndexHNSW"
   IVFFlat:
     function: "create_MilvusIndexIVFFlat"
   IVFPQ:
