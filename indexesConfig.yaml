@@ -1,5 +1,5 @@
-mode: "milvus"
-index: "Flat"
+mode: "faiss"
+index: "flatL2"
 search_params_type: "flat" #only with milvus
 metric_type: "L2" #only with milvus
 faiss_indexes:
@@ -12,21 +12,28 @@ faiss_indexes:
     param1: 0 #M
   IVFFlat:
     function: "create_IndexIVFFlat"
-    param1: 4 #ncells
+    param1: 4 #nlists
     param2: 1 #nprobe
   IVFPQ:
     function: "create_IndexIVFPQ"
     param1: 4 #nlist
+    param2: 150 #M
+    param3: 2 #nbits
   IVFPQR:
     function: "create_IndexIVFPQR"
     param1: 4 #nlist
+    param2: 150 #M
+    param3: 2 #nbits
   IVFScalarQuantizer:
     function: "create_IndexIVFScalarQuantizer"
     param1: 4 #nlist
   LSH:
     function: "create_IndexLSH"
+    param1: 1000 #nbits
   PQ:
     function: "create_IndexPQ"
+    param1: 150 #M
+    param2: 2 #nbits
   ScalarQuantizer:
     function: "create_IndexScalarQuantizer"
 
@@ -38,12 +45,18 @@ milvus_indexes:
     function: "create_MilvusIndexFlat"
   HSNW:
     function: "create_MilvusIndexHNSW"
+    param1: 8 #M
+    param2: 16 #efConstrucion
   IVFFlat:
     function: "create_MilvusIndexIVFFlat"
+    param1: 128 #nlist
   IVFPQ:
     function: "create_MilvusIndexIVFPQ"
+    param1: 128 #nlist
+    param2: 20 #m
   IVFSQ8:
     function: "create_MilvusIndexIVFSQ8"
+    param1: 128 #nlist
 
 search_parameters:
   flat:

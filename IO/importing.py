@@ -5,6 +5,7 @@ import numpy as np
 import pyteomics.mgf
 from tqdm import tqdm
 import pandas as pd
+import blink
 def loadScpectrums(path):
     spectrums = list(load_from_mgf(path))
     return spectrums
@@ -51,3 +52,12 @@ def read_mgf(input_file, min_signals=4, max_mz=1500, min_rel_intensity=0.001):
             "peaks": spectra
         }
     )
+
+def loadSpectraBlink(file):
+    mgf = blink.open_msms_file(file)
+    discretized_spectra = blink.discretize_spectra(mgf.spectrum.tolist(),
+                                                   mgf.precursor_mz.tolist(),
+                                                   bin_width=0.001, tolerance=0.01, intensity_power=0.5,
+                                                   trim_empty=False, remove_duplicates=False, network_score=False)
+
+    return discretized_spectra
