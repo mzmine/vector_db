@@ -6,6 +6,9 @@ import pyteomics.mgf
 from tqdm import tqdm
 import pandas as pd
 import blink
+import sys
+
+from ftplib import FTP
 def loadScpectrums(path):
     spectrums = list(load_from_mgf(path))
     return spectrums

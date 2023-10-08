@@ -18,6 +18,7 @@ from preprocessing.peak_processing import peak_processing
 from preprocessing.train_spec2vec import train_spec2vec
 from preprocessing.binPeakList import bin_peak_list
 from preprocessing.get_Spec2Vec_vectors import get_Spec2Vec_vectors
+from preprocessing.get_MS2DeepScore_vectors import get_MS2DeepScore_vectors
 from vectorization.reshape_vectors import reshape_vectors
 from vectorization.faissIndexes import create_IndexFlatL2
 from vectorization.faissIndexes import create_IndexFlatIP
@@ -150,9 +151,9 @@ start_time = time.time()
 
 
 lib1 = os.path.abspath('GNPS-NIH-NATURALPRODUCTSLIBRARY.mgf')
-
+model_path = os.path.abspath('MS2DeepScore_allGNPSpositive_10k_500_500_200.hdf5')
 libname = "gnps"
-model_file= "New model2"
+model_file= "New model3"
 #  use 11 as min mz as we are also using it for neutral losses
 """min_mz = 11
 max_mz = 1500
@@ -165,11 +166,11 @@ spec_df["sum_i"] = [peaks[1].sum() for peaks in spec_df["peaks"]]
 spec_df["sum_by_max"] = spec_df["sum_i"] / spec_df["max_i"]
 spec_df = spec_df.sort_values(by="sum_by_max", ascending=False).reset_index()
 spec_df.to_csv(f"{libname}_calc.csv")"""
-spectra = loadSpectraBlink(lib1)
-#spectra = [peak_processing(spectrum) for spectrum in spectra]
+spectra = loadScpectrums(lib1)
+spectra = [peak_processing(spectrum) for spectrum in spectra]
 #spectra = [metadata_processing(spectrum) for spectrum in spectra]
-model = train_spec2vec(model_file,spectra)
-vectors_array= get_Spec2Vec_vectors(model)
+model = importMS2DeepscoreModel(model_path)
+vectors_array= get_MS2DeepScore_vectors(spectra,model)
 #vectors_array = np.array([bin_peak_list(peaks, min_mz, max_mz, 0.05, precursor, include_neutral_loss=True) for
                        #precursor, peaks in zip(spec_df["precursor_mz"], spec_df["peaks"])], dtype="float32")
 result= indexSearch(vectors_array,yaml_data)

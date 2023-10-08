@@ -1,2 +1,2 @@
 
-__all__ = ["metadata_processing","peak_processing", "train_spec2vec", "binPeakList","get_Spec2Vec_vectors"]
+__all__ = ["metadata_processing","peak_processing", "train_spec2vec", "binPeakList","get_Spec2Vec_vectors","get_MS2DeepScore_vectors"]

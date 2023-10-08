@@ -1,5 +1,5 @@
-mode: "faiss"
-index: "flatL2"
+mode: "milvus"
+index: "Flat"
 search_params_type: "flat" #only with milvus
 metric_type: "L2" #only with milvus
 faiss_indexes:
