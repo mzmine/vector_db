@@ -1,12 +1,10 @@
-# This is a sample Python script.
 
-# Press Mayús+F10 to execute it or replace it with your code.
-# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
 
 
 
 
 import numpy as np
+import sys
 from IO.export import generateNetwork
 from IO.importing import loadScpectrums
 from IO.importing import importSpec2VecModel
@@ -53,11 +51,6 @@ from statistics.export_benchmarking import export_benchmarking
 import time
 from pymilvus import (
     connections,
-    utility,
-    FieldSchema,
-    CollectionSchema,
-    DataType,
-    Collection,
 )
 import logging
 import yaml
@@ -140,41 +133,45 @@ def indexSearch(vectors_array, yaml_data):
                                            output_fields=["pk"])
             milvus_vectors.release()
             milvus_vectors.drop_index()
-            """command = ["sudo", "docker-compose", "down"]
-            subprocess.run(command)
-            command = ["sudo", "rm", "-rf", "volumes"]
-            subprocess.run(command)"""
             return result
 
 start_time = time.time()
-# lib1 = r"D:\Data\lib\BILELIB19.mgf"
-
-
 lib1 = os.path.abspath('GNPS-NIH-NATURALPRODUCTSLIBRARY.mgf')
 model_path = os.path.abspath('MS2DeepScore_allGNPSpositive_10k_500_500_200.hdf5')
 libname = "gnps"
 model_file= "New model3"
-#  use 11 as min mz as we are also using it for neutral losses
-"""min_mz = 11
-max_mz = 1500
-logger.info("Read mgf")
-spec_df = read_mgf(lib1, 4, max_mz, 0.001)
-logger.info("read done; create vectors for {}".format(spec_df.shape[0]))
-spec_df["npeaks"] = [len(peaks[1]) for peaks in spec_df["peaks"]]
-spec_df["max_i"] = [peaks[1].max() for peaks in spec_df["peaks"]]
-spec_df["sum_i"] = [peaks[1].sum() for peaks in spec_df["peaks"]]
-spec_df["sum_by_max"] = spec_df["sum_i"] / spec_df["max_i"]
-spec_df = spec_df.sort_values(by="sum_by_max", ascending=False).reset_index()
-spec_df.to_csv(f"{libname}_calc.csv")"""
-spectra = loadScpectrums(lib1)
-spectra = [peak_processing(spectrum) for spectrum in spectra]
-#spectra = [metadata_processing(spectrum) for spectrum in spectra]
-model = importMS2DeepscoreModel(model_path)
-vectors_array= get_MS2DeepScore_vectors(spectra,model)
+importing = sys.argv[1]
+preprocessing = sys.argv[2]
+vectorization = sys.argv[3]
+if importing == 'matchms':
+    spectra = loadScpectrums(lib1)
+elif importing == 'blink':
+    spectra = loadSpectraBlink(lib1)
+elif importing == 'importR':
+    spectra = read_mgf(lib1)
+if preprocessing == 'normal':
+    spectra = [peak_processing(spectrum) for spectrum in spectra]
+    spectra = [metadata_processing(spectrum) for spectrum in spectra]
+if vectorization == 'simple':
+    vectors = [simple_vectorization(spectrum) for spectrum in spectra]
+    vectors_array = reshape_vectors(vectors)
+elif vectorization == 'simple2':
+    vectors_array = [simple_vectorization2(spectrum) for spectrum in spectra]
+elif vectorization == 'Ms2DeepScore':
+    model = importMS2DeepscoreModel(model_path)
+    vectors_array = get_MS2DeepScore_vectors(spectra,model)
+elif vectorization == 'Spec2Vec':
+    model = train_spec2vec(model_file, spectra)
+    vectors_array = get_Spec2Vec_vectors(model)
+
+
+
 #vectors_array = np.array([bin_peak_list(peaks, min_mz, max_mz, 0.05, precursor, include_neutral_loss=True) for
                        #precursor, peaks in zip(spec_df["precursor_mz"], spec_df["peaks"])], dtype="float32")
 result= indexSearch(vectors_array,yaml_data)
 print(result)
+command = ["sudo", "docker-compose", "down", "--volumes"]
+subprocess.run(command)
 
 
 

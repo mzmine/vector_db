@@ -11,8 +11,8 @@ def create_MilvusCollection(vectors_array, entities):
         FieldSchema(name="pk", dtype=DataType.INT64, is_primary=True, auto_id=False),
         FieldSchema(name="embeddings", dtype=DataType.FLOAT_VECTOR, dim=len(vectors_array[0]))
     ]
-    schema = CollectionSchema(fields, "vector collection5")
-    milvusVectors = Collection("vector_collection5", schema)
+    schema = CollectionSchema(fields, "vector collection6")
+    milvusVectors = Collection("vector_collection6", schema)
 
     milvusVectors.insert(entities)
     milvusVectors.flush()
