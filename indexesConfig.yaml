@@ -1,6 +1,6 @@
-mode: "milvus"
-index: "Flat"
-search_params_type: "flat" #only with milvus
+mode: "faiss"
+index: "flatL2"
+search_params_type: "IVF" #only with milvus
 metric_type: "L2" #only with milvus
 faiss_indexes:
   flatIP:
@@ -13,16 +13,18 @@ faiss_indexes:
   IVFFlat:
     function: "create_IndexIVFFlat"
     param1: 4 #nlists
-    param2: 1 #nprobe
+    param2: 1 #nprobe0b96aaa29
+
+    
   IVFPQ:
     function: "create_IndexIVFPQ"
     param1: 4 #nlist
-    param2: 150 #M
+    param2: 4 #M
     param3: 2 #nbits
   IVFPQR:
     function: "create_IndexIVFPQR"
     param1: 4 #nlist
-    param2: 150 #M
+    param2: 4 #M
     param3: 2 #nbits
   IVFScalarQuantizer:
     function: "create_IndexIVFScalarQuantizer"
@@ -32,7 +34,7 @@ faiss_indexes:
     param1: 1000 #nbits
   PQ:
     function: "create_IndexPQ"
-    param1: 150 #M
+    param1: 4 #M
     param2: 2 #nbits
   ScalarQuantizer:
     function: "create_IndexScalarQuantizer"
@@ -53,7 +55,7 @@ milvus_indexes:
   IVFPQ:
     function: "create_MilvusIndexIVFPQ"
     param1: 128 #nlist
-    param2: 20 #m
+    param2: 2 #m
   IVFSQ8:
     function: "create_MilvusIndexIVFSQ8"
     param1: 128 #nlist
@@ -61,6 +63,7 @@ milvus_indexes:
 search_parameters:
   flat:
     function: "create_MilvusFlatSP"
+    param1: 6 #search_k
   IVF:
     function: "create_MilvusIVFSP"
     param1: 4 #nprobe

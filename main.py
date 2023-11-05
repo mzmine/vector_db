@@ -1,10 +1,14 @@
+# This is a sample Python script.
 
+# Press Mayús+F10 to execute it or replace it with your code.
+# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
 
 
 
 
 import numpy as np
 import sys
+import json
 from IO.export import generateNetwork
 from IO.importing import loadScpectrums
 from IO.importing import importSpec2VecModel
@@ -47,6 +51,7 @@ from comparison.ms2deepscore import ms2deepscore
 from visualization.plot_scores_restrictive import plotScoresRestrictive
 from visualization.plot_scores import plotScores
 from visualization.get_best_matches import getBestMatches
+from visualization.plotSmiles import plotSmiles
 from statistics.export_benchmarking import export_benchmarking
 import time
 from pymilvus import (
@@ -96,6 +101,10 @@ def indexSearch(vectors_array, yaml_data):
         D, I = index.search(vectors_array[:5], 4)
         print(D)
         print(I)
+        for i in range(I.shape[1]):
+            indexes = I[i]
+            plotSmiles(spectra, indexes)
+
     elif yaml_data['mode'] == "milvus":
         search_type = yaml_data['search_params_type']
         command = ["sudo", "docker-compose", "up", "-d"]
@@ -103,6 +112,9 @@ def indexSearch(vectors_array, yaml_data):
         time.sleep(60)
         connections.connect("default", host="localhost", port="19530")
         entities = create_MilvusEntities(vectors_array)
+        milvus_vectors = create_MilvusCollection(vectors_array, entities)
+        milvus_vectors.release()
+        milvus_vectors.drop_index()
         milvus_vectors = create_MilvusCollection(vectors_array, entities)
         if search_type in yaml_data['search_parameters']:
             function_name = yaml_data['search_parameters'][search_type]['function']
@@ -128,12 +140,16 @@ def indexSearch(vectors_array, yaml_data):
             else:
                 milvus_vectors = selected_function2(milvus_vectors, metric_type)
             milvus_vectors.load()
-            vectors_to_search = entities[-1][-2:]
-            result = milvus_vectors.search(vectors_to_search, "embeddings", search_params, limit=6,
+            vectors_to_search = entities[-1][:2]
+            results = milvus_vectors.search(vectors_to_search, "embeddings", search_params, limit=6,
                                            output_fields=["pk"])
             milvus_vectors.release()
             milvus_vectors.drop_index()
-            return result
+            for result in results:
+                indexes = np.array(result.ids)
+                print(indexes[0])
+                plotSmiles(spectra, indexes)
+            return results
 
 start_time = time.time()
 lib1 = os.path.abspath('GNPS-NIH-NATURALPRODUCTSLIBRARY.mgf')
@@ -153,10 +169,9 @@ if preprocessing == 'normal':
     spectra = [peak_processing(spectrum) for spectrum in spectra]
     spectra = [metadata_processing(spectrum) for spectrum in spectra]
 if vectorization == 'simple':
-    vectors = [simple_vectorization(spectrum) for spectrum in spectra]
-    vectors_array = reshape_vectors(vectors)
+    vectors_array = simple_vectorization(spectra)
 elif vectorization == 'simple2':
-    vectors_array = [simple_vectorization2(spectrum) for spectrum in spectra]
+    vectors_array = simple_vectorization2(spectra)
 elif vectorization == 'Ms2DeepScore':
     model = importMS2DeepscoreModel(model_path)
     vectors_array = get_MS2DeepScore_vectors(spectra,model)
@@ -164,15 +179,10 @@ elif vectorization == 'Spec2Vec':
     model = train_spec2vec(model_file, spectra)
     vectors_array = get_Spec2Vec_vectors(model)
 
-
-
-#vectors_array = np.array([bin_peak_list(peaks, min_mz, max_mz, 0.05, precursor, include_neutral_loss=True) for
-                       #precursor, peaks in zip(spec_df["precursor_mz"], spec_df["peaks"])], dtype="float32")
 result= indexSearch(vectors_array,yaml_data)
 print(result)
 command = ["sudo", "docker-compose", "down", "--volumes"]
 subprocess.run(command)
-
 
 
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/

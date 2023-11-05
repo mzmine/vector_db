@@ -49,11 +49,11 @@ def create_MilvusIndexIVFPQ(milvus_vectors,metric_type, nlist, m):
     milvus_vectors.load()
     return milvus_vectors
 
-def create_MilvusIndexIVFSQ8(milvus_vectors,metric_type):
+def create_MilvusIndexIVFSQ8(milvus_vectors,metric_type, nlist):
     index = {
         "index_type": "IVF_SQ8",
         "metric_type": metric_type,
-        "params": {"nlist": 128},
+        "params": {"nlist": nlist},
     }
     milvus_vectors.create_index("embeddings", index)
     milvus_vectors.load()

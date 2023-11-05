@@ -11,8 +11,8 @@ def create_MilvusCollection(vectors_array, entities):
         FieldSchema(name="pk", dtype=DataType.INT64, is_primary=True, auto_id=False),
         FieldSchema(name="embeddings", dtype=DataType.FLOAT_VECTOR, dim=len(vectors_array[0]))
     ]
-    schema = CollectionSchema(fields, "vector collection6")
-    milvusVectors = Collection("vector_collection6", schema)
+    schema = CollectionSchema(fields, "vector collection8")
+    milvusVectors = Collection("vector_collection8", schema)
 
     milvusVectors.insert(entities)
     milvusVectors.flush()
@@ -26,9 +26,10 @@ def create_MilvusEntities(vectors_array):
     ]
     return entities
 
-def create_MilvusFlatSP(metric_type):
+def create_MilvusFlatSP(metric_type, search_k):
     search_params = {
         "metric_type": metric_type,
+        "params": {"search_k": search_k}
     }
     return search_params
 
