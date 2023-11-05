@@ -1,7 +1,7 @@
 # vector_db
 # Introduction
 The goal of this repository is to create a vector database joining the functionality of different vector comparison programs such as matchms, Ms2DeepScore, faiss or milvus in order to provide the variability needed to obtain the optimal search results of the query vectors.  
-This is oriented to the search of the nearest neighbour of molecules in the field of proteomics.
+This is oriented to the search of the nearest neighbour of molecules in the field of metabolomics.
 # Structure
 The code is divided in 4 main processes:  
 -  IO  
@@ -73,6 +73,9 @@ The program supports different type of indexes which can be clasified by this ma
 In order to execute the program I have been using the WSL console to support the docker container needed to execute the milvus indexes. To run the program tou would need to enter the following command line: "python3 main.py [import method] [preprocessing method] [vectorization method]. Currently not all the importing methods can be used due to data type incompatiblities that need to be solved, this with the fact that there is only 1 preprocessing method at the moment leave the command as "python3 main.py matchms normal [vectorization method]".  
 The command line of the console can only modify the first three processes, the index search process can be modified changing the indexconfig.yaml file of the repository. In this file you can choose between faiss or milvus indexes by changing the name of the program and index or search parameters to use, you can also modify the internal index parameters in order to optimize the of your specific vector search.
 Finally the file with the spectra is selected within the code in the lib1 variable and the query vectors are also selected within the code in the vectors_to_search variable.
+
+# *Issues
+Right now there are still some compatibility errors that need to be fixed regarding the data types used in the different importing methods of the program (marked with * in the readme)
   
 
 
