@@ -1,0 +1,69 @@
+mode: "faiss"
+index: "flatL2"
+search_params_type: "IVF" #only with milvus
+metric_type: "L2" #only with milvus
+faiss_indexes:
+  flatIP:
+    function: "create_IndexFlatIP"
+  flatL2:
+    function: "create_IndexFlatL2"
+  HNSWFlat:
+    function: "create_IndexHNSWFlat"
+    param1: 0 #M
+  IVFFlat:
+    function: "create_IndexIVFFlat"
+    param1: 4 #nlists
+    param2: 1 #nprobe0b96aaa29
+
+    
+  IVFPQ:
+    function: "create_IndexIVFPQ"
+    param1: 4 #nlist
+    param2: 4 #M
+    param3: 2 #nbits
+  IVFPQR:
+    function: "create_IndexIVFPQR"
+    param1: 4 #nlist
+    param2: 4 #M
+    param3: 2 #nbits
+  IVFScalarQuantizer:
+    function: "create_IndexIVFScalarQuantizer"
+    param1: 4 #nlist
+  LSH:
+    function: "create_IndexLSH"
+    param1: 1000 #nbits
+  PQ:
+    function: "create_IndexPQ"
+    param1: 4 #M
+    param2: 2 #nbits
+  ScalarQuantizer:
+    function: "create_IndexScalarQuantizer"
+
+milvus_indexes:
+  ANNOY:
+    function: "create_MilvusIndexANNOY"
+    param1: 2 #n_trees
+  Flat:
+    function: "create_MilvusIndexFlat"
+  HSNW:
+    function: "create_MilvusIndexHNSW"
+    param1: 8 #M
+    param2: 16 #efConstrucion
+  IVFFlat:
+    function: "create_MilvusIndexIVFFlat"
+    param1: 128 #nlist
+  IVFPQ:
+    function: "create_MilvusIndexIVFPQ"
+    param1: 128 #nlist
+    param2: 2 #m
+  IVFSQ8:
+    function: "create_MilvusIndexIVFSQ8"
+    param1: 128 #nlist
+
+search_parameters:
+  flat:
+    function: "create_MilvusFlatSP"
+    param1: 6 #search_k
+  IVF:
+    function: "create_MilvusIVFSP"
+    param1: 4 #nprobe

@@ -1,0 +1,4 @@
+Preprocessing: 35.497702836990356
+Vectorization: None
+Comparison: 81.5604100227356
+Visualization: 0.10993742942810059
